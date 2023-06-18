@@ -1,0 +1,43 @@
+@import '../../../_variables.scss';
+
+.main-container{
+    display:flex;
+    height:100%;
+    width:100%;
+    justify-content: center;
+    align-items: center;
+}
+
+label{
+    font-size:1.6rem;
+    color:map-get($map: $md-secondary, $key:500 );
+    margin-bottom:30px;
+    align-self: center;
+}
+
+.card-style{
+    display:flex;
+    flex:1;
+    max-width:350px;
+    flex-direction: column;
+    justify-content: center;
+    padding:20px;
+}
+
+.mat-form-field{
+    width:100%;
+}
+
+.login-button{
+    margin-bottom:15px;
+}
+
+.register-button{
+    width:100%;
+}
+
+form{
+    display:flex;
+    flex:1;
+    flex-direction:column
+}

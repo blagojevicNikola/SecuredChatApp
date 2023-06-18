@@ -1,0 +1,31 @@
+<mat-sidenav-container class="main-container">
+    <mat-sidenav mode="side" opened>
+        <div class="profile-container">
+            <mat-icon matCardAvatar>account_circle</mat-icon>
+            <a>{{authService.getUsername()}}</a>
+        </div>
+        <mat-list>
+            <mat-list-item (click)="openChat(user)" style="cursor:pointer; display: flex; flex-direction:row; align-items: center;" *ngFor="let user of onlineUsers">
+                <mat-icon matCardAvatar color="primary">U</mat-icon>
+                <span matListItemTitle>{{user.username}}</span>
+            </mat-list-item>
+        </mat-list>
+    </mat-sidenav>
+    <mat-sidenav-content>
+        <mat-toolbar color="primary">
+            <span *ngIf="selectedUser">{{selectedUser.username}}</span>
+        </mat-toolbar>
+        <div class="messages-container">
+            <div class="secure-inbox-container" *ngIf="selectedUser==null">
+                <label>Secured Inbox</label>
+            </div>
+        </div>
+        <div *ngIf="selectedUser" class="bottom-container">
+            <mat-form-field appearance="outline" class="example-full-width">
+                <mat-label>Message</mat-label>
+                <textarea matInput></textarea>
+            </mat-form-field>
+            <button class="send-button" color="primary" mat-icon-button><mat-icon>send</mat-icon></button>
+        </div>
+    </mat-sidenav-content>
+</mat-sidenav-container>
