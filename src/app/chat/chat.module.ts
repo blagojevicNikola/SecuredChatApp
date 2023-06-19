@@ -10,6 +10,7 @@ import {MatInputModule} from '@angular/material/input';
 import {MatIconModule} from '@angular/material/icon'; 
 import { ChatRoutingModule } from './chat-routing.module';
 import { MainComponent } from './main/main.component';
+import { FormsModule } from '@angular/forms';
 
 
 @NgModule({
@@ -26,7 +27,8 @@ import { MainComponent } from './main/main.component';
     MatCardModule,
     MatInputModule,
     MatIconModule,
-    MatListModule
+    MatListModule,
+    FormsModule
   ]
 })
 export class ChatModule { }
