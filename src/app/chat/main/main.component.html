@@ -5,7 +5,7 @@
             <a>{{authService.getUsername()}}</a>
         </div>
         <mat-list>
-            <mat-list-item [ngClass]="selectedUser==user ? 'active-chat' : ''" (click)="openChat(user)" style="cursor:pointer; display: flex; flex-direction:row; align-items: center;" *ngFor="let user of onlineUsers">
+            <mat-list-item [ngClass]="selectedUser==user ? 'active-chat' : ''" (click)="openChat(user)" style="cursor:pointer; display: flex; flex-direction:row; align-items: center;" *ngFor="let user of chatStateService.chatUsers">
                 <mat-icon matListItemIcon color="primary">U</mat-icon>
                 <span matListItemTitle>{{user.username}}</span>
             </mat-list-item>
@@ -20,9 +20,11 @@
                 <label>Secured Inbox</label>
             </div>
             <div class="msg-list" #msgList *ngIf="selectedUser">
-                <mat-card class="msg-elem" [ngClass]="m.sender==selectedUser.username ? 'left sender' : 'right receiver'" *ngFor="let m of selectedUser.msgs">
+                <!-- <mat-card class="msg-elem" [ngClass]="m.sender==selectedUser.username ? 'left sender' : 'right receiver'" *ngFor="let m of selectedUser.msgs">
                     <a>{{m.content}}</a>
-                </mat-card>
+                </mat-card> -->
+                <p>{{selectedUser.publicRsa}}</p>
+                <a>{{this.chatStateService.user!.publicEC}}</a>
             </div>
         </div>
         <div *ngIf="selectedUser" class="bottom-container">     
@@ -30,7 +32,7 @@
                 <mat-label>Message</mat-label>
                 <textarea [(ngModel)]="msgContent" matInput></textarea>
             </mat-form-field>
-            <button (click)="sendMsg()" class="send-button" color="primary" mat-icon-button><mat-icon>send</mat-icon></button>
+            <button class="send-button" color="primary" mat-icon-button><mat-icon>send</mat-icon></button>
         </div>
     </mat-sidenav-content>
 </mat-sidenav-container>

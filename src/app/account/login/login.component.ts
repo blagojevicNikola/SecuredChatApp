@@ -1,6 +1,9 @@
 import { AuthService } from 'src/app/shared/services/auth/auth.service';
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
+import { User } from 'src/app/shared/models/user.models';
+import { ChatStateService } from 'src/app/chat/services/chat-state.service';
+import {ec} from 'elliptic';
 
 @Component({
   selector: 'app-login',
@@ -15,7 +18,7 @@ export class LoginComponent {
   username?:string;
   password?:string;
 
-  constructor(private router:Router, private authService:AuthService){}
+  constructor(private router:Router, private authService:AuthService, private chatStateService:ChatStateService){}
 
   registerNav()
   {
@@ -31,6 +34,15 @@ export class LoginComponent {
           next:(value)=>{
             this.authService.saveToken(value.token);
             this.router.navigateByUrl('');
+            var EC = ec;
+            var gen = new EC('secp256k1');
+            const keyPair = gen.genKeyPair();
+            const privateKey = keyPair.getPrivate('hex');
+            const publicKey = keyPair.getPublic('hex');
+            let user : User;
+            user = {username:value.username, publicRsa:value.publicRsa, privateRsa:value.privateRsa
+            ,privateEC: privateKey, publicEC: publicKey };
+            this.chatStateService.user = user;
           },
           error:()=>{
             console.log('Error while logging in!');
