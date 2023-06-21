@@ -7,6 +7,9 @@ import { ChatStateService } from './chat-state.service';
 import { ChatUser } from 'src/app/shared/models/chat-user.models';
 import * as NodeF from 'node-forge';
 import {ec} from 'elliptic';
+import * as CryptoJS from 'crypto-js'
+import { SegmentResp } from 'src/app/shared/models/segment-resp.model';
+import {encode, decode} from 'ts-steganography';
 
 @Injectable({
   providedIn: 'root'
@@ -19,6 +22,7 @@ export class SignalrService {
    }
   gen:ec;
   hubConnection!: signalR.HubConnection
+  pending: Map<string, SegmentResp[]> = new Map();
 
   ssSubj = new Subject<any>;
   ssObs(): Observable<any> {
@@ -43,7 +47,7 @@ export class SignalrService {
       this.joinedListener();
       this.newUserListener();
       this.receiveDHListener();
-      
+      this.segmentListener();
     }
     else {
       this.ssObs().subscribe(value => {
@@ -54,6 +58,7 @@ export class SignalrService {
           this.joinedListener();
           this.newUserListener();
           this.receiveDHListener();
+          this.segmentListener();
         }
       })
     }
@@ -115,6 +120,81 @@ export class SignalrService {
           // const enc = rsaPub.encrypt(this.chatStateService.user!.publicEC);
           this.hubConnection.invoke("SendPubDH", {receiver:this.chatStateService.chatUsers[index].username, content:this.chatStateService.user!.publicEC, return: false});
         }
+      }
+    });
+  }
+
+  async sendMessage(user:ChatUser, content:string)
+  {
+    var data: string[] = [];
+    var sliceSize: number = 10;
+    for(var i =0; i < 4 ; i++)
+    {
+      if(i==3)
+      {
+        data.push(content.slice(sliceSize*i));
+      }else
+      {
+        data.push(content.slice(sliceSize*i, sliceSize*(i+1)))
+      }
+    }
+    var messageId = Math.floor((Math.random() * 10000) + 1).toString();
+    var receiver = user.username;
+    for(var i = 0; i < data.length; i++)
+    {
+      var steg = false;
+      var toSendSegment = data[i];
+      if(i== data.length-1)
+      {
+        steg = true;
+        const result = await encode(data[i], 'assets/crypt.png');
+        toSendSegment = result;
+      }
+      var toSend: {messageId:string, steg:boolean, max:number, curr:number, segment:string}
+      = {messageId:messageId, steg:steg, max:data.length, curr:i, segment:toSendSegment};
+      console.log("MessageId:" + messageId + " max:" + data.length + " curr:" + i + " segment:" + data[i]);
+      const ecnrypted = CryptoJS.AES.encrypt(JSON.stringify(toSend), user.symmetric!);
+      console.log("Encrypted:" + ecnrypted.toString());
+      this.hubConnection.invoke("SendMsg",{receiver:receiver, content:ecnrypted.toString()});
+    }
+    user.msgs.push({sender:this.chatStateService.user!.username, receiver: receiver, content:content})
+  }
+
+  private segmentListener()
+  {
+    this.hubConnection.on("ReceiveSegment", async (result: {sender:string; segment:string})=>{
+      var index = this.chatStateService.chatUsers.findIndex(u => u.username == result.sender);
+      if(index != -1 && this.chatStateService.chatUsers[index].symmetric)
+      {
+        console.log('Segment received!' + result.sender + '-' + result.segment);
+        const key = this.chatStateService.chatUsers[index].symmetric;
+        const decrypted = CryptoJS.AES.decrypt(result.segment, key!);
+        const jsonValue = decrypted.toString(CryptoJS.enc.Utf8);
+        console.log(decrypted.toString());
+        var objectValue:SegmentResp = JSON.parse(jsonValue);
+        if(objectValue.steg)
+        {
+          objectValue.segment = await decode(objectValue.segment);
+        }
+        var segmentList = this.pending.get(objectValue.messageId);
+        if(segmentList == undefined)
+        {
+          console.log("Message id didnt exist!");
+          this.pending.set(objectValue.messageId, [objectValue]);
+        }else
+        {
+          segmentList.push(objectValue);
+          console.log("Pushed segment into pending");
+          if(segmentList.length == objectValue.max)
+          {
+            console.log('formed message');
+            var content = '';
+            segmentList.sort((a, b) => a.curr - b.curr).forEach(s => content+=s.segment);
+            this.chatStateService.chatUsers[index].msgs.push({sender:result.sender, receiver:this.chatStateService.user!.username, content:content});
+            this.pending.delete(objectValue.messageId);
+          }
+        }
+
       }
     });
   }

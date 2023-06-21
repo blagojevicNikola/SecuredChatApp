@@ -4,7 +4,6 @@ import { AuthService } from 'src/app/shared/services/auth/auth.service';
 import { ChatUser } from 'src/app/shared/models/chat-user.models';
 import { HubConnectionState } from '@microsoft/signalr';
 import { FormControl, FormGroup } from '@angular/forms';
-import { Message } from 'src/app/shared/models/message.models';
 import { ChatStateService } from '../services/chat-state.service';
 
 @Component({
@@ -42,16 +41,24 @@ export class MainComponent implements OnInit, OnDestroy {
   {
     if(user!=this.selectedUser)
     {
-      this.signalrService.exchangeDH(user.username, user.publicRsa);
+      this.signalrService.exchangeDH(user);
       this.selectedUser = user;
       this.scrollToBottom();
     }
   }
 
+  async sendMessage()
+  {
+    if(this.selectedUser && this.msgContent!='' && this.selectedUser.symmetric)
+    {
+      await this.signalrService.sendMessage(this.selectedUser, this.msgContent);
+      this.msgContent = '';
+    }
+  }
 
   private scrollToBottom()
   {
-    if(this.messageContainer)
+    if(this.messageContainer && this.messageList)
     {
       const comp = this.messageContainer.nativeElement;
       const list = this.messageList?.nativeElement;

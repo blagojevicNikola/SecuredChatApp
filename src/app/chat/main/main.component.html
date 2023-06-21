@@ -19,12 +19,13 @@
             <div class="secure-inbox-container" *ngIf="selectedUser==null">
                 <label>Secured Inbox</label>
             </div>
-            <div class="msg-list" #msgList *ngIf="selectedUser">
-                <!-- <mat-card class="msg-elem" [ngClass]="m.sender==selectedUser.username ? 'left sender' : 'right receiver'" *ngFor="let m of selectedUser.msgs">
+            <div class="msg-list" #msgList *ngIf="selectedUser && selectedUser.symmetric">
+                <mat-card class="msg-elem" [ngClass]="m.sender==selectedUser.username ? 'left sender' : 'right receiver'" *ngFor="let m of selectedUser.msgs">
                     <a>{{m.content}}</a>
-                </mat-card> -->
-                <p>{{selectedUser.publicRsa}}</p>
-                <a>{{this.chatStateService.user!.publicEC}}</a>
+                </mat-card>
+            </div>
+            <div class="spinner-container" *ngIf="selectedUser && selectedUser.symmetric ==null">
+                <mat-spinner></mat-spinner>
             </div>
         </div>
         <div *ngIf="selectedUser" class="bottom-container">     
@@ -32,7 +33,7 @@
                 <mat-label>Message</mat-label>
                 <textarea [(ngModel)]="msgContent" matInput></textarea>
             </mat-form-field>
-            <button class="send-button" color="primary" mat-icon-button><mat-icon>send</mat-icon></button>
+            <button (click)="sendMessage()" class="send-button" color="primary" mat-icon-button><mat-icon>send</mat-icon></button>
         </div>
     </mat-sidenav-content>
 </mat-sidenav-container>

@@ -11,7 +11,7 @@ import {MatIconModule} from '@angular/material/icon';
 import { ChatRoutingModule } from './chat-routing.module';
 import { MainComponent } from './main/main.component';
 import { FormsModule } from '@angular/forms';
-
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner'; 
 
 @NgModule({
   declarations: [
@@ -28,7 +28,8 @@ import { FormsModule } from '@angular/forms';
     MatInputModule,
     MatIconModule,
     MatListModule,
-    FormsModule
+    FormsModule,
+    MatProgressSpinnerModule
   ]
 })
 export class ChatModule { }
