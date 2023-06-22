@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { User } from 'src/app/shared/models/user.models';
 import { ChatStateService } from 'src/app/chat/services/chat-state.service';
 import {ec} from 'elliptic';
+import { AppConfigService } from 'src/app/shared/services/config/app-config.service';
 
 @Component({
   selector: 'app-login',

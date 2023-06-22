@@ -9,6 +9,7 @@ export class ChatStateService {
 
   user?:User;
   chatUsers:ChatUser[] = []
-
+  selectedUser?:ChatUser
+  
   constructor() { }
 }

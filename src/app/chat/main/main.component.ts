@@ -20,7 +20,7 @@ export class MainComponent implements OnInit, OnDestroy {
   // {id:2, username:'test', email:'test', msgs:[]},
   // {id:3, username:'proba', email:'test', msgs:[]}]
   msgContent:string = '';
-  selectedUser?:ChatUser;
+  // selectedUser?:ChatUser;
 
   @ViewChild('msgComp') messageContainer!:ElementRef;
   @ViewChild('msgList') messageList?:ElementRef;
@@ -30,28 +30,27 @@ export class MainComponent implements OnInit, OnDestroy {
   
   ngOnInit(): void {
     this.signalrService.startConnection();
-    
   }
 
   ngOnDestroy(): void {
-   this.signalrService.stopConnection();
+    this.signalrService.logout();
   }
 
   openChat(user:ChatUser)
   {
-    if(user!=this.selectedUser)
+    if(user!=this.chatStateService.selectedUser)
     {
       this.signalrService.exchangeDH(user);
-      this.selectedUser = user;
+      this.chatStateService.selectedUser = user;
       this.scrollToBottom();
     }
   }
 
   async sendMessage()
   {
-    if(this.selectedUser && this.msgContent!='' && this.selectedUser.symmetric)
+    if(this.chatStateService.selectedUser && this.msgContent!='' && this.chatStateService.selectedUser.symmetric)
     {
-      await this.signalrService.sendMessage(this.selectedUser, this.msgContent);
+      await this.signalrService.sendMessage(this.chatStateService.selectedUser, this.msgContent);
       this.msgContent = '';
     }
   }

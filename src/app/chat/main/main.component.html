@@ -5,7 +5,7 @@
             <a>{{authService.getUsername()}}</a>
         </div>
         <mat-list>
-            <mat-list-item [ngClass]="selectedUser==user ? 'active-chat' : ''" (click)="openChat(user)" style="cursor:pointer; display: flex; flex-direction:row; align-items: center;" *ngFor="let user of chatStateService.chatUsers">
+            <mat-list-item [ngClass]="this.chatStateService.selectedUser==user ? 'active-chat' : ''" (click)="openChat(user)" style="cursor:pointer; display: flex; flex-direction:row; align-items: center;" *ngFor="let user of chatStateService.chatUsers">
                 <mat-icon matListItemIcon color="primary">U</mat-icon>
                 <span matListItemTitle>{{user.username}}</span>
             </mat-list-item>
@@ -13,22 +13,22 @@
     </mat-sidenav>
     <mat-sidenav-content>
         <mat-toolbar color="primary">
-            <span *ngIf="selectedUser">{{selectedUser.username}}</span>
+            <span *ngIf="this.chatStateService.selectedUser">{{this.chatStateService.selectedUser.username}}</span>
         </mat-toolbar>
         <div class="messages-container" #msgComp>
-            <div class="secure-inbox-container" *ngIf="selectedUser==null">
+            <div class="secure-inbox-container" *ngIf="this.chatStateService.selectedUser==null">
                 <label>Secured Inbox</label>
             </div>
-            <div class="msg-list" #msgList *ngIf="selectedUser && selectedUser.symmetric">
-                <mat-card class="msg-elem" [ngClass]="m.sender==selectedUser.username ? 'left sender' : 'right receiver'" *ngFor="let m of selectedUser.msgs">
+            <div class="msg-list" #msgList *ngIf="this.chatStateService.selectedUser && this.chatStateService.selectedUser.symmetric">
+                <mat-card class="msg-elem" [ngClass]="m.sender==this.chatStateService.selectedUser.username ? 'left sender' : 'right receiver'" *ngFor="let m of this.chatStateService.selectedUser.msgs">
                     <a>{{m.content}}</a>
                 </mat-card>
             </div>
-            <div class="spinner-container" *ngIf="selectedUser && selectedUser.symmetric ==null">
+            <div class="spinner-container" *ngIf="this.chatStateService.selectedUser && this.chatStateService.selectedUser.symmetric ==null">
                 <mat-spinner></mat-spinner>
             </div>
         </div>
-        <div *ngIf="selectedUser" class="bottom-container">     
+        <div *ngIf="this.chatStateService.selectedUser" class="bottom-container">     
             <mat-form-field appearance="outline">
                 <mat-label>Message</mat-label>
                 <textarea [(ngModel)]="msgContent" matInput></textarea>
@@ -37,3 +37,9 @@
         </div>
     </mat-sidenav-content>
 </mat-sidenav-container>
+
+<ng-template #nomessages>
+    <div class="secure-inbox-container">
+        <a>No messages. Start the conversation...</a>
+    </div>
+</ng-template>
