@@ -10,7 +10,7 @@
 
 label{
     font-size:1.6rem;
-    color:map-get($map: $md-secondary, $key:500 );
+    color:map-get($md-primary, $key:500 );
     margin-bottom:30px;
     align-self: center;
 }

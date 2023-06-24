@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ChatModule } from '../chat.module';
 import * as signalR from '@microsoft/signalr';
-import { Observable, Subject, map, share } from 'rxjs';
+import { Observable, Subject, Subscription, map, share } from 'rxjs';
 import { HubConnectionState } from '@microsoft/signalr';
 import { ChatStateService } from './chat-state.service';
 import { ChatUser } from 'src/app/shared/models/chat-user.models';
@@ -11,13 +11,14 @@ import * as CryptoJS from 'crypto-js'
 import { SegmentResp } from 'src/app/shared/models/segment-resp.model';
 import { encode, decode } from 'ts-steganography';
 import { AppConfigService } from 'src/app/shared/services/config/app-config.service';
+import { AuthService } from 'src/app/shared/services/auth/auth.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SignalrService {
 
-  constructor(private chatStateService: ChatStateService, private appConfigService: AppConfigService) {
+  constructor(private chatStateService: ChatStateService, private appConfigService: AppConfigService, private authService:AuthService) {
     var EC = ec;
     this.gen = new EC('secp256k1');
     this.hostIndex = Math.floor(Math.random() * this.appConfigService.data.servers.length);
@@ -25,6 +26,7 @@ export class SignalrService {
     for (let i = 0; i < this.appConfigService.data.servers.length; i++) {
       let tmp = new signalR.HubConnectionBuilder().withUrl(this.appConfigService.data.servers[i]
         , {
+          accessTokenFactory: () => this.authService.getToken()!,
           skipNegotiation: true,
           transport: signalR.HttpTransportType.WebSockets
         }).build();
@@ -33,11 +35,10 @@ export class SignalrService {
   }
 
   hubConnections: signalR.HubConnection[] = []
-  hostHub!: signalR.HubConnection
   hostIndex!: number;
   gen: ec;
-  hubConnection!: signalR.HubConnection
   pending: Map<string, SegmentResp[]> = new Map();
+  subjSubscription?:Subscription
 
   ssSubj = new Subject<number>;
   ssObs(): Observable<number> {
@@ -59,7 +60,7 @@ export class SignalrService {
       this.connectInternal();
     }
     else {
-      this.ssObs().subscribe(value => {
+      this.subjSubscription = this.ssObs().subscribe(value => {
         if(value==2)
         {
           console.log('Second check');
@@ -106,9 +107,7 @@ export class SignalrService {
 
   private offlineListener()
   {
-    for(let hub of this.hubConnections)
-    {
-      hub.on("Left", (username:string)=>{
+      this.hubConnections[this.hostIndex].on("Left", (username:string)=>{
         const index = this.chatStateService.chatUsers.findIndex(u => u.username === username);
         if(index!==-1)
         {
@@ -119,7 +118,6 @@ export class SignalrService {
           }
         }
       })
-    }
   }
 
   private newUserListener() {
@@ -128,6 +126,7 @@ export class SignalrService {
         hub.on("NewUser", (user: ChatUser) => {
         user.msgs = [];
         this.chatStateService.chatUsers.push(user);
+        console.log(user.publicRsa);
       })
     }
   }
@@ -169,8 +168,9 @@ export class SignalrService {
   async sendMessage(user: ChatUser, content: string) {
     var data: string[] = [];
     var sliceSize: number = 10;
-    for (var i = 0; i < 4; i++) {
-      if (i == 3) {
+    var slicesNumber:number = Math.floor(Math.random()*6)+4;
+    for (var i = 0; i < slicesNumber; i++) {
+      if (i == slicesNumber-1) {
         data.push(content.slice(sliceSize * i));
       } else {
         data.push(content.slice(sliceSize * i, sliceSize * (i + 1)))
@@ -178,6 +178,7 @@ export class SignalrService {
     }
     var messageId = Math.floor((Math.random() * 10000) + 1).toString();
     var receiver = user.username;
+    const privateKey = NodeF.pki.privateKeyFromPem(this.chatStateService.user!.privateRsa);
     for (var i = 0; i < data.length; i++) {
       var steg = false;
       var toSendSegment = data[i];
@@ -190,8 +191,12 @@ export class SignalrService {
         = { messageId: messageId, steg: steg, max: data.length, curr: i, segment: toSendSegment };
       console.log("MessageId:" + messageId + " max:" + data.length + " curr:" + i + " segment:" + data[i]);
       const ecnrypted = CryptoJS.AES.encrypt(JSON.stringify(toSend), user.symmetric!);
+      const md = NodeF.md.sha256.create();
+      md.update(ecnrypted.toString(), 'utf8');
+      const signature = NodeF.util.encode64(privateKey.sign(md));
+      console.log("Signed:" + signature);
       console.log("Encrypted:" + ecnrypted.toString());
-      this.hubConnections[i%this.hubConnections.length].invoke("SendMsg", { receiver: receiver, content: ecnrypted.toString() });
+      this.hubConnections[i%this.hubConnections.length].invoke("SendMsg", { receiver: receiver, content: ecnrypted.toString(), signature:signature });
     }
     user.msgs.push({ sender: this.chatStateService.user!.username, receiver: receiver, content: content })
   }
@@ -199,13 +204,23 @@ export class SignalrService {
   private segmentListener() {
     for(let hub of this.hubConnections)
     {
-      hub.on("ReceiveSegment", async (result: { sender: string; segment: string }) => {
+      hub.on("ReceiveSegment", async (result: { sender: string; segment: string; signature:string; }) => {
         var index = this.chatStateService.chatUsers.findIndex(u => u.username == result.sender);
         if (index != -1 && this.chatStateService.chatUsers[index].symmetric) {
-          console.log('Segment received!' + result.sender + '-' + result.segment);
           const key = this.chatStateService.chatUsers[index].symmetric;
           const decrypted = CryptoJS.AES.decrypt(result.segment, key!);
           const jsonValue = decrypted.toString(CryptoJS.enc.Utf8);
+          const md = NodeF.md.sha256.create();
+          md.update(result.segment, 'utf8');
+          const publicKey = NodeF.pki.publicKeyFromPem(this.chatStateService.chatUsers[index].publicRsa);
+          const isVerified = publicKey.verify(md.digest().bytes(), NodeF.util.decode64(result.signature));
+          console.log('Segment received!' + result.sender + '-' + result.signature);
+          console.log(isVerified + "-is verified?");
+          if(isVerified === false)
+          {
+            console.log("Not valid!")
+            return;
+          }
           console.log(decrypted.toString());
           var objectValue: SegmentResp = JSON.parse(jsonValue);
           if (objectValue.steg) {
@@ -234,9 +249,11 @@ export class SignalrService {
 
   logout()
   {
-    this.hubConnections[this.hostIndex].invoke("LoggingOut").then(()=>{
-      this.stopConnection();
-    });
+    if(this.subjSubscription)
+    {
+      this.subjSubscription.unsubscribe();
+    }
+    this.stopConnection();
   }
 
   stopConnection = () => {

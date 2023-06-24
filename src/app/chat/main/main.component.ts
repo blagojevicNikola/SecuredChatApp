@@ -12,19 +12,11 @@ import { ChatStateService } from '../services/chat-state.service';
   styleUrls: ['./main.component.scss']
 })
 export class MainComponent implements OnInit, OnDestroy {
-  // [{id:1, username:'nikola', email:'test', msgs:[
-  //   {sender:'nikola', receiver:'nesto', content:'llasdkjfaslkdfjlsadk jfasldfjasldfjk aslkdfjas ldfkjasdflkj'},
-  //   {sender:'nesto', receiver:'nikola', content:'llaadk jfasldfjasldfjk aslkdfjas ldfkjasdflkj'},
-  //   {sender:'nikola', receiver:'nesto', content:'llasdkjfaslkdfjlsadk jfasldfjasldfjk aslkdfjas ldfkjas sadf asd asdfdddflkj'},
-  // ]},
-  // {id:2, username:'test', email:'test', msgs:[]},
-  // {id:3, username:'proba', email:'test', msgs:[]}]
+  
   msgContent:string = '';
-  // selectedUser?:ChatUser;
 
   @ViewChild('msgComp') messageContainer!:ElementRef;
   @ViewChild('msgList') messageList?:ElementRef;
-
 
   constructor(private signalrService: SignalrService, public authService: AuthService, public chatStateService:ChatStateService) { }
   

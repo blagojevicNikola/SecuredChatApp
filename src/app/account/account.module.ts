@@ -12,6 +12,7 @@ import { SharedModule } from '../shared/shared.module';
 import { AuthService } from '../shared/services/auth/auth.service';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 
 @NgModule({
@@ -28,7 +29,8 @@ import { FormsModule } from '@angular/forms';
     MatInputModule,
     MatIconModule,
     SharedModule,
-    FormsModule
+    FormsModule,
+    MatSnackBarModule
   ],
   providers:[HttpClientModule]
 })

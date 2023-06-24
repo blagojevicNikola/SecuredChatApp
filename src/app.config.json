@@ -1,6 +1,6 @@
 {
     "servers":[
-        "https://localhost:7272/chathub",
-        "https://localhost:7273/chathub"
+        "/p1",
+        "/p2"
     ]
 }

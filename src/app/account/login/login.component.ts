@@ -4,7 +4,9 @@ import { Router } from '@angular/router';
 import { User } from 'src/app/shared/models/user.models';
 import { ChatStateService } from 'src/app/chat/services/chat-state.service';
 import {ec} from 'elliptic';
+import {MatSnackBarModule, MatSnackBar} from '@angular/material/snack-bar'; 
 import { AppConfigService } from 'src/app/shared/services/config/app-config.service';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-login',
@@ -14,12 +16,12 @@ import { AppConfigService } from 'src/app/shared/services/config/app-config.serv
 export class LoginComponent {
 
 
-  hide:boolean = false;
-
+  hide:boolean = true;
+  disabled:boolean = false;
   username?:string;
   password?:string;
 
-  constructor(private router:Router, private authService:AuthService, private chatStateService:ChatStateService){}
+  constructor(private router:Router, private authService:AuthService, private chatStateService:ChatStateService, private _snackBar:MatSnackBar){}
 
   registerNav()
   {
@@ -30,11 +32,11 @@ export class LoginComponent {
   {
     if(this.username && this.password)
     {
+      this.disabled = true;
       this.authService.login(this.username,this.password).subscribe(
         {
           next:(value)=>{
             this.authService.saveToken(value.token);
-            this.router.navigateByUrl('');
             var EC = ec;
             var gen = new EC('secp256k1');
             const keyPair = gen.genKeyPair();
@@ -44,9 +46,19 @@ export class LoginComponent {
             user = {username:value.username, publicRsa:value.publicRsa, privateRsa:value.privateRsa
             ,privateEC: privateKey, publicEC: publicKey };
             this.chatStateService.user = user;
+            this.router.navigateByUrl('');
+            this.disabled=false;
           },
-          error:()=>{
-            console.log('Error while logging in!');
+          error:(err:HttpErrorResponse)=>{
+            if(err.status==404)
+            {
+              this._snackBar.open("Incorrect username or password!", "Okay", {duration:3000});
+            }
+            else
+            {
+              this._snackBar.open("Error while connecting!", "Okay", {duration:3000});
+            }
+            this.disabled = false;
           }
         }
       )

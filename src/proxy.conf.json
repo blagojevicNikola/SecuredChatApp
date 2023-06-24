@@ -7,6 +7,24 @@
         "^/api": ""
       }
     },
+    "/p1/*": {
+      "target": "https://localhost:7272/chathub",
+      "secure": false,
+      "logLevel": "debug",
+      "ws":true,
+      "pathRewrite": {
+        "^/p1": ""
+      }
+    },
+    "/p2/*": {
+      "target": "https://localhost:7273/chathub",
+      "secure": false,
+      "logLevel": "debug",
+      "ws":true,
+      "pathRewrite": {
+        "^/p2": ""
+      }
+    },
     "changeOrigin": true
   }
   

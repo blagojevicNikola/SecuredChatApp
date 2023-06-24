@@ -1,6 +1,6 @@
 <div class="main-container">
     <mat-card class="card-style">
-        <label>Login</label>
+        <label color="primary">Secured Chat</label>
         <mat-form-field appearance="outline">
             <mat-label>Username</mat-label>
             <input [(ngModel)]="username" matInput>
@@ -13,7 +13,7 @@
                 <mat-icon>{{hide ? 'visibility_off' : 'visibility'}}</mat-icon>
             </button>
         </mat-form-field>
-        <button (click)="login()" class="login-button" mat-raised-button color="primary">Login</button>
+        <button [disabled]="disabled" (click)="login()" class="login-button" mat-raised-button color="primary">Login</button>
 
         <button (click)="registerNav()" class="register-button" mat-stroked-button color="primary">Not registered?</button>
     </mat-card>
