@@ -26,6 +26,7 @@ export class MainComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.signalrService.logout();
+    this.authService.logout();
   }
 
   openChat(user:ChatUser)
@@ -56,6 +57,19 @@ export class MainComponent implements OnInit, OnDestroy {
       comp.scrollTop = list.scrollHeight;
       console.log('scrolled');
     }
+  }
+
+  textAreaListener(event:KeyboardEvent)
+  {
+    if(event.key === 'Enter')
+    {
+      this.sendMessage();
+    }
+  }
+
+  getFirstLetter(username:string)
+  {
+    return username.charAt(0).toUpperCase();
   }
 
 }

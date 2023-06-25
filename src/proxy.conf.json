@@ -25,6 +25,24 @@
         "^/p2": ""
       }
     },
+    "/p3/*": {
+      "target": "https://localhost:7274/chathub",
+      "secure": false,
+      "logLevel": "debug",
+      "ws":true,
+      "pathRewrite": {
+        "^/p3": ""
+      }
+    },
+    "/p4/*": {
+      "target": "https://localhost:7275/chathub",
+      "secure": false,
+      "logLevel": "debug",
+      "ws":true,
+      "pathRewrite": {
+        "^/p4": ""
+      }
+    },
     "changeOrigin": true
   }
   

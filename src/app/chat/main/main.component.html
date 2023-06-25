@@ -6,7 +6,7 @@
         </div>
         <mat-list>
             <mat-list-item [ngClass]="this.chatStateService.selectedUser==user ? 'active-chat' : ''" (click)="openChat(user)" style="cursor:pointer; display: flex; flex-direction:row; align-items: center;" *ngFor="let user of chatStateService.chatUsers">
-                <mat-icon matListItemIcon color="primary">U</mat-icon>
+                <mat-icon matListItemIcon color="primary">{{getFirstLetter(user.username)}}</mat-icon>
                 <span matListItemTitle>{{user.username}}</span>
             </mat-list-item>
         </mat-list>
@@ -31,7 +31,7 @@
         <div *ngIf="this.chatStateService.selectedUser" class="bottom-container">     
             <mat-form-field appearance="outline">
                 <mat-label>Message</mat-label>
-                <textarea [(ngModel)]="msgContent" matInput></textarea>
+                <textarea (keydown)="textAreaListener($event)" [(ngModel)]="msgContent" matInput></textarea>
             </mat-form-field>
             <button (click)="sendMessage()" class="send-button" color="primary" mat-icon-button><mat-icon>send</mat-icon></button>
         </div>

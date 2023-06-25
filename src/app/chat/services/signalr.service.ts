@@ -61,7 +61,7 @@ export class SignalrService {
     }
     else {
       this.subjSubscription = this.ssObs().subscribe(value => {
-        if(value==2)
+        if(value==this.appConfigService.data.servers.length)
         {
           console.log('Second check');
           this.connectInternal();
@@ -138,17 +138,31 @@ export class SignalrService {
     if (user.symmetric) {
       return;
     }
-    this.hubConnections[this.hostIndex].invoke("SendPubDH", { receiver: user.username, content: this.chatStateService.user!.publicEC, return: true });
+    const md = NodeF.md.sha256.create();
+    md.update(this.chatStateService.user!.publicEC, 'utf8');
+    const privateKey = NodeF.pki.privateKeyFromPem(this.chatStateService.user!.privateRsa);
+    const signature = NodeF.util.encode64(privateKey.sign(md));
+    this.hubConnections[this.hostIndex].invoke("SendPubDH", { receiver: user.username, content: this.chatStateService.user!.publicEC, signature:signature, return: true });
   }
 
   private receiveDHListener() {
     for(let hub of this.hubConnections)
     {
-      hub.on("ReceivePubDH", (message: { sender: string, content: string, return: boolean }) => {
+      hub.on("ReceivePubDH", (message: { sender: string, content: string, signature:string, return: boolean }) => {
         var index = this.chatStateService.chatUsers.findIndex(u => u.username === message.sender);
         if (index != -1) {
           console.log('received DH from' + message.sender);
           // const receiverPublicKeyHex = Buffer.from(message.content, 'hex');
+          const md = NodeF.md.sha256.create();
+          md.update(message.content, 'utf8');
+          const senderPublicRsa = NodeF.pki.publicKeyFromPem(this.chatStateService.chatUsers[index].publicRsa);
+          const isVerified = senderPublicRsa.verify(md.digest().bytes(), NodeF.util.decode64(message.signature));
+          if(isVerified == false)
+          {
+            console.log("DH not veririfed!");
+            return;
+          }
+          console.log("Dh is verified!");
           const receiverPublicKey = this.gen.keyFromPublic(message.content, 'hex');
           const senderPrivateKey = this.gen.keyFromPrivate(this.chatStateService.user!.privateEC, 'hex');
           const sharedSecret = senderPrivateKey.derive(receiverPublicKey.getPublic());
@@ -156,9 +170,11 @@ export class SignalrService {
           console.log('Symmetric is:' + message.return);
           if (message.return === true) {
             console.log('I sent it again');
-            // const rsaPub = NodeF.pki.publicKeyFromPem(this.chatStateService.chatUsers[index].publicRsa);
-            // const enc = rsaPub.encrypt(this.chatStateService.user!.publicEC);
-            this.hubConnections[this.hostIndex].invoke("SendPubDH", { receiver: this.chatStateService.chatUsers[index].username, content: this.chatStateService.user!.publicEC, return: false });
+            const md2 = NodeF.md.sha256.create();
+            md2.update(this.chatStateService.user!.publicEC, 'utf8');
+            const privateKey = NodeF.pki.privateKeyFromPem(this.chatStateService.user!.privateRsa);
+            const signature = NodeF.util.encode64(privateKey.sign(md2));
+            this.hubConnections[this.hostIndex].invoke("SendPubDH", { receiver: this.chatStateService.chatUsers[index].username, content: this.chatStateService.user!.publicEC, signature:signature, return: false });
           }
         }
       });
@@ -167,8 +183,8 @@ export class SignalrService {
 
   async sendMessage(user: ChatUser, content: string) {
     var data: string[] = [];
-    var sliceSize: number = 10;
-    var slicesNumber:number = Math.floor(Math.random()*6)+4;
+    var slicesNumber:number = Math.floor(Math.random()*7)+this.appConfigService.data.servers.length;
+    var sliceSize: number = Math.floor(content.length/slicesNumber); //***To make slices same/similar size***
     for (var i = 0; i < slicesNumber; i++) {
       if (i == slicesNumber-1) {
         data.push(content.slice(sliceSize * i));

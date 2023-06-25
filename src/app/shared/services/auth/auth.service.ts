@@ -8,6 +8,7 @@ import { SharedModule } from '../../shared.module';
 })
 export class AuthService {
 
+  private token?:string;
   constructor(private http:HttpClient) { }
 
   login(username: string, password:string)
@@ -22,17 +23,13 @@ export class AuthService {
 
   saveToken(token:string)
   {
-    localStorage.setItem('token', token);
-  }
-
-  private loadToken() {
-    return localStorage.getItem('token');
+    this.token = token;
   }
 
   public getUsername() : string | null{
-    if (this.loadToken()) {
+    if (this.token) {
       try {
-        const base64Url = this.loadToken()!.split('.')[1];
+        const base64Url = this.token.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
         const decodedToken = JSON.parse(window.atob(base64));
         var obj = decodedToken['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'];
@@ -55,7 +52,7 @@ export class AuthService {
 
   isAuthenticated()
   {
-    if(this.getUsername() && !this.tokenExpired(this.loadToken()))
+    if(this.token && this.getUsername() && !this.tokenExpired(this.token))
     {
       return true;
     }
@@ -64,12 +61,13 @@ export class AuthService {
 
   getToken()
   {
-    return this.loadToken();
+    return this.token;
   }
+
 
   logout()
   {
-    localStorage.removeItem('token');
+    this.token=undefined;
   }
 
 }
